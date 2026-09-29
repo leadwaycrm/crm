@@ -14,7 +14,9 @@ import { fileURLToPath } from "node:url";
 
 const apiDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const repoRoot = dirname(dirname(apiDir));
-const outDir = join(repoRoot, ".vercel/output");
+// Ryvo: the Vercel project root is apps/api, so the Build Output API directory
+// must live there, not at the repo root.
+const outDir = join(apiDir, ".vercel/output");
 const funcDir = join(outDir, "functions/api/index.func");
 const bun = process.env.BUN_BIN || "bun";
 
@@ -177,7 +179,9 @@ writeFileSync(
 	JSON.stringify({
 		version: 3,
 		routes: [{ src: "/(.*)", dest: "/api/index" }],
-		crons: [{ path: "/internal/sync/google", schedule: "*/5 * * * *" }],
+		// Ryvo: take the crons from apps/api/vercel.json (the Build Output API ignores
+		// vercel.json), instead of the single legacy /internal/sync/google alias.
+		crons: JSON.parse(readFileSync(join(apiDir, "vercel.json"), "utf8")).crons,
 	}),
 );
 
