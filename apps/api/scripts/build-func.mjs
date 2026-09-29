@@ -179,9 +179,8 @@ writeFileSync(
 	JSON.stringify({
 		version: 3,
 		routes: [{ src: "/(.*)", dest: "/api/index" }],
-		// Ryvo: take the crons from apps/api/vercel.json (the Build Output API ignores
-		// vercel.json), instead of the single legacy /internal/sync/google alias.
-		crons: JSON.parse(readFileSync(join(apiDir, "vercel.json"), "utf8")).crons,
+		// Ryvo: no crons here. Vercel merges apps/api/vercel.json's crons into the
+		// deployment, so repeating /internal/sync/google here double-ran the sync.
 	}),
 );
 
