@@ -160,6 +160,28 @@ export function externalParticipants(
 	});
 }
 
+/**
+ * People on free mail hosts (gmail.com, outlook.com…). `externalParticipants`
+ * drops them because their domain says nothing about a company, but a contact
+ * that already exists with one of these addresses should still get its
+ * threads. They are only used to match existing contacts, never to create a
+ * company or a contact.
+ */
+export function freeMailParticipants(
+	participants: readonly Participant[],
+	options: ExternalFilterOptions,
+): Participant[] {
+	return participants.filter((participant) => {
+		if (options.ourAddresses.has(participant.email)) return false;
+		if (options.suppressedEmails.has(participant.email)) return false;
+		if (isMachineAddress(participant.email)) return false;
+		if (workDomain(participant.email)) return false;
+		if (isAutomatedAddress(participant.email)) return false;
+
+		return true;
+	});
+}
+
 export function dominantDomain(
 	participants: readonly Participant[],
 	preferKnown: ReadonlySet<string> = new Set(),
