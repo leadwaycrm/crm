@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
 	dominantDomain,
 	externalParticipants,
+	freeMailParticipants,
 	isAutomatedAddress,
 	isDerivedName,
 	isMachineAddress,
@@ -172,6 +173,21 @@ describe("externalParticipants", () => {
 		);
 
 		expect(result).toEqual([person("jane@acme.com")]);
+	});
+
+	it("keeps free hosts apart, only to match contacts that already exist", () => {
+		const result = freeMailParticipants(
+			[
+				person("lewis@trycomp.ai"),
+				person("someone@gmail.com", "Someone"),
+				person("noreply@gmail.com"),
+				person("deleted@outlook.com"),
+				person("jane@acme.com"),
+			],
+			{ ...options, suppressedEmails: new Set(["deleted@outlook.com"]) },
+		);
+
+		expect(result).toEqual([person("someone@gmail.com", "Someone")]);
 	});
 
 	it("never files a shared calendar as a person at a company", () => {

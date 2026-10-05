@@ -9,6 +9,7 @@ import { InjectDatabase } from "../database/database.constants";
 import {
 	dominantDomain,
 	externalParticipants,
+	freeMailParticipants,
 	isDerivedName,
 	type Participant,
 	splitName,
@@ -88,19 +89,26 @@ export class MailboxMatchService {
 		request: MatchRequest,
 		context: MatchContext,
 	): Promise<MatchResult> {
-		const external = externalParticipants(request.participants, {
+		const filter = {
 			ourDomains: context.ourDomains,
 			ourAddresses: context.ourAddresses,
 			suppressedDomains: context.suppressedDomains,
 			suppressedEmails: context.suppressedEmails,
-		});
+		};
+		const external = externalParticipants(request.participants, filter);
+		// Free mail addresses only ever match a contact that already exists.
+		const freeMail = freeMailParticipants(request.participants, filter);
 
-		if (external.length === 0) {
+		if (external.length === 0 && freeMail.length === 0) {
 			return { companyId: null, contactId: null, external };
 		}
 
 		const contact = await this.db.contact.findFirst({
-			where: { email: { in: external.map((person) => person.email) } },
+			where: {
+				email: {
+					in: [...external, ...freeMail].map((person) => person.email),
+				},
+			},
 			select: { id: true, companyId: true },
 		});
 
@@ -110,6 +118,10 @@ export class MailboxMatchService {
 				contactId: contact.id,
 				external,
 			};
+		}
+
+		if (external.length === 0) {
+			return { companyId: null, contactId: null, external };
 		}
 
 		const domains = [
